@@ -10,13 +10,6 @@ module SimpleCaptcha
   autoload :FormBuilder,       'simple_captcha/form_builder'
   autoload :CustomFormBuilder, 'simple_captcha/formtastic'
 
-  if defined?(ActiveRecord)
-    autoload :ModelHelpers,      'simple_captcha/active_record'
-    autoload :SimpleCaptchaData, 'simple_captcha/simple_captcha_data'
-  else
-    autoload :SimpleCaptchaData,      'simple_captcha/simple_captcha_data_mongoid.rb'
-  end
-
 
   autoload :Middleware,        'simple_captcha/middleware'
 
@@ -48,7 +41,11 @@ module SimpleCaptcha
 
   # tmp directory
   mattr_accessor :tmp_path
-  @@tmp_path = nil
+  @@tmp_path = Dir::tmpdir
+
+  # point size
+  mattr_accessor :point_size
+  @@point_size = 22
 
   def self.add_image_style(name, params = [])
     SimpleCaptcha::ImageHelpers.image_styles.update(name.to_s => params)
@@ -56,6 +53,23 @@ module SimpleCaptcha
 
   def self.setup
     yield self
+  end
+
+  class << self
+    def store
+      @store || 'active_record'
+    end
+
+    def store=(type)
+      @store = type
+      if type == 'redis'
+        instance_eval %q{
+          mattr_accessor :redis, :expire
+          @@redis = nil
+          @@expire = 3600
+        }
+      end
+    end
   end
 end
 
