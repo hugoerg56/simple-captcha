@@ -49,15 +49,14 @@ module SimpleCaptcha #:nodoc
     
     module InstanceMethods
     
-      def valid_with_captcha?
-        [valid?, is_captcha_valid?].all?
+      def valid_with_captcha?(data)
+        [valid?, is_captcha_valid?(data)].all?
       end
       
-      def is_captcha_valid?
+      def is_captcha_valid?(data)
         return true if Rails.env.test?
-
-        if captcha && captcha.upcase.delete(" ") == SimpleCaptcha::Utils::simple_captcha_value(captcha_key)
-          SimpleCaptcha::Utils::simple_captcha_passed!(captcha_key)
+        if data[:captcha] && data[:captcha].upcase.delete(" ") == SimpleCaptcha::Utils::simple_captcha_value(data[:captcha_key])
+          SimpleCaptcha::Utils::simple_captcha_passed!(data[:captcha_key])
           return true
         else
           message = simple_captcha_options[:message] || I18n.t(self.class.model_name.name.downcase, :scope => [:simple_captcha, :message], :default => :default)
@@ -66,8 +65,8 @@ module SimpleCaptcha #:nodoc
         end
       end
       
-      def save_with_captcha
-        valid_with_captcha? && save(:validate => false)
+      def save_with_captcha(data)
+        valid_with_captcha?(data) && save(:validate => false)
       end
     end
   end
